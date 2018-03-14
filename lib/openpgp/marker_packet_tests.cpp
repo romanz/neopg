@@ -1,5 +1,5 @@
 // OpenPGP marker packet (tests)
-// Copyright 2017 The NeoPG developers
+// Copyright 2017-2018 The NeoPG developers
 //
 // NeoPG is released under the Simplified BSD License (see license.txt)
 
@@ -31,5 +31,14 @@ TEST(NeoPGTest, openpg_marker_packet_test) {
 
     packet.write(out);
     ASSERT_EQ(out.str(), "\xca\x03PGP");
+  }
+
+  {
+    // Test parser.
+    ASSERT_ANY_THROW(MarkerPacket("PGPx", 4));
+    ASSERT_ANY_THROW(MarkerPacket("PGP", 2));
+    ASSERT_ANY_THROW(MarkerPacket("GPG", 3));
+
+    ASSERT_NO_THROW(MarkerPacket("PGP", 3));
   }
 }
