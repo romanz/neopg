@@ -1,5 +1,5 @@
 // OpenPGP MDC packet
-// Copyright 2017 The NeoPG developers
+// Copyright 2017-2018 The NeoPG developers
 //
 // NeoPG is released under the Simplified BSD License (see license.txt)
 
@@ -25,6 +25,9 @@ struct NEOPG_UNSTABLE_API ModificationDetectionCodePacket : Packet {
 
   void write_body(std::ostream& out) const override;
   PacketType type() const override;
+
+  ModificationDetectionCodePacket() = default;
+  ModificationDetectionCodePacket(const char* data, size_t len);
 };
 
 }  // namespace NeoPG

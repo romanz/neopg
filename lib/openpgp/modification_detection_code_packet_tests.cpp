@@ -1,5 +1,5 @@
 // OpenPGP MDC packet (tests)
-// Copyright 2017 The NeoPG developers
+// Copyright 2017-2018 The NeoPG developers
 //
 // NeoPG is released under the Simplified BSD License (see license.txt)
 
@@ -28,9 +28,24 @@ TEST(NeoPGTest, openpg_modification_detection_code_packet_test) {
   }
 
   {
-    /* Failures.  */
+    // Failures.
     std::stringstream out;
     ModificationDetectionCodePacket packet;
     ASSERT_THROW(packet.write(out), std::logic_error);
+  }
+
+  {
+    // Test parser.
+    const auto mdc = std::vector<uint8_t>{
+        0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a,
+        0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14};
+    ASSERT_NO_THROW(
+        ModificationDetectionCodePacket((const char*)mdc.data(), mdc.size()));
+
+    auto packet =
+        ModificationDetectionCodePacket((const char*)mdc.data(), mdc.size());
+    ASSERT_EQ(packet.m_data, mdc);
+
+    ASSERT_ANY_THROW(ModificationDetectionCodePacket("foobar", 6));
   }
 }
