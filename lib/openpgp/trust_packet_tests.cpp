@@ -23,4 +23,15 @@ TEST(NeoPGTest, openpg_trust_packet_test) {
                                      "\x01\x02\x03\x04\x05\x06\x07\x08",
                                      10));
   }
+
+  {
+    // Test parser.
+    const auto trust = std::vector<uint8_t>{0x01, 0x02, 0x03, 0x04};
+    ASSERT_NO_THROW(TrustPacket((const char*)trust.data(), trust.size()));
+
+    auto packet = TrustPacket{(const char*)trust.data(), trust.size()};
+    ASSERT_EQ(packet.m_data, trust);
+
+    // Will never throw, so no failure tests.
+  }
 }

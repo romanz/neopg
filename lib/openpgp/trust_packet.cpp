@@ -7,12 +7,10 @@
 #include <neopg/packet_header.h>
 #include <neopg/trust_packet.h>
 
-namespace NeoPG {
+using namespace NeoPG;
 
 void TrustPacket::write_body(std::ostream& out) const {
   out.write((char*)m_data.data(), m_data.size());
 }
 
 PacketType TrustPacket::type() const { return PacketType::Trust; }
-
-}  // namespace NeoPG
