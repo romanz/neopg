@@ -18,6 +18,9 @@
 
 #include <CLI11.hpp>
 
+#include <json.hpp>
+using json = nlohmann::json;
+
 #include <boost/format.hpp>
 
 #include <iostream>
@@ -52,6 +55,22 @@ struct LegacyPacketSink : public RawPacketSink {
               << " ctb=" << (boost::format("%02x") % (int)(uint8_t)head[0])
               << " tag=" << (int)header->type() << " hlen=" << head.length()
               << " plen=" << length << (new_header ? " new-ctb" : "") << "\n";
+
+    auto packet = Packet::create(header->type(), data, length);
+    packet->m_header = std::move(header);
+    switch (packet->type()) {
+      case PacketType::Marker:
+        std::cout << ":marker packet: PGP\n";
+        break;
+      case PacketType::UserId: {
+        auto uid = dynamic_cast<UserIdPacket*>(packet.get());
+        assert(uid);
+        json str = uid->m_content;
+        std::cout << ":user ID packet: " << str << "\n";
+      } break;
+      default:
+        break;
+    }
   }
   void start_packet(std::unique_ptr<PacketHeader> header){};
   void continue_packet(const char* data, size_t length){};

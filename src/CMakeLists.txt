@@ -34,6 +34,7 @@ target_include_directories(neopg-tool PUBLIC
   "${CMAKE_BINARY_DIR}/include"
   ${BOTAN2_INCLUDE_DIRS}
   ${CLI11_INCLUDE_DIR}
+  ${JSON_INCLUDE_DIR}
   ../include
 )
 
