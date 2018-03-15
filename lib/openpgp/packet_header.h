@@ -27,7 +27,7 @@ enum class NEOPG_UNSTABLE_API PacketType : uint8_t {
   Marker = 10,
   LiteralData = 11,
   Trust = 12,
-  UserID = 13,
+  UserId = 13,
   PublicSubkey = 14,
   UserAttribute = 17,
   SymmetricallyEncryptedIntegrityProtectedData = 18,

@@ -12,6 +12,9 @@
 namespace NeoPG {
 
 struct NEOPG_UNSTABLE_API Packet {
+  static std::unique_ptr<Packet> create(PacketType type, const char* data,
+                                        size_t len);
+
   /// Use this to overwrite the default header.
   std::unique_ptr<PacketHeader> m_header;
 
