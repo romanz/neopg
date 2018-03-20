@@ -17,6 +17,9 @@ namespace NeoPG {
 /// GnuPG limits it to 2 KB.
 class NEOPG_UNSTABLE_API UserIdPacket : public Packet {
  public:
+  static std::unique_ptr<UserIdPacket> create(ParserInput& input);
+  static std::unique_ptr<UserIdPacket> create_or_throw(ParserInput& input);
+
   /// The suggested limit for the size of #m_content.  This limit is not
   /// enforced in this class.
   const size_t MAX_LENGTH = 2048;
@@ -27,7 +30,6 @@ class NEOPG_UNSTABLE_API UserIdPacket : public Packet {
   PacketType type() const override;
 
   UserIdPacket() = default;
-  UserIdPacket(const char* data, size_t len) : m_content{data, len} {};
 };
 
 }  // namespace NeoPG

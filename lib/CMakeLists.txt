@@ -15,8 +15,11 @@ set(NeopgHeaders
   openpgp/literal_data_packet.h
   openpgp/marker_packet.h
   openpgp/modification_detection_code_packet.h
+  openpgp/multiprecision_integer.h
   openpgp/packet_header.h
   openpgp/packet.h
+  openpgp/public_key_material.h
+  openpgp/public_key_packet.h
   openpgp/raw_packet.h
   openpgp/symmetrically_encrypted_data_packet.h
   openpgp/symmetrically_encrypted_integrity_protected_data_packet.h
@@ -38,8 +41,11 @@ add_library(neopg
   openpgp/literal_data_packet.cpp
   openpgp/marker_packet.cpp
   openpgp/modification_detection_code_packet.cpp
+  openpgp/multiprecision_integer.cpp
   openpgp/packet_header.cpp
   openpgp/packet.cpp
+  openpgp/public_key_material.cpp
+  openpgp/public_key_packet.cpp
   openpgp/raw_packet.cpp
   openpgp/symmetrically_encrypted_data_packet.cpp
   openpgp/symmetrically_encrypted_integrity_protected_data_packet.cpp

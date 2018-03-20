@@ -6,6 +6,9 @@
 #pragma once
 
 #include <neopg/packet.h>
+#include <neopg/parser_input.h>
+
+#include <memory>
 
 namespace NeoPG {
 
@@ -17,11 +20,13 @@ namespace NeoPG {
 /// here for completeness.
 class NEOPG_UNSTABLE_API MarkerPacket : public Packet {
  public:
+  static std::unique_ptr<MarkerPacket> create(ParserInput& input);
+  static std::unique_ptr<MarkerPacket> create_or_throw(ParserInput& input);
+
   void write_body(std::ostream& out) const override;
   PacketType type() const override;
 
   MarkerPacket() = default;
-  MarkerPacket(const char* data, size_t len);
 };
 
 }  // namespace NeoPG

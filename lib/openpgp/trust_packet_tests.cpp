@@ -12,7 +12,7 @@
 
 using namespace NeoPG;
 
-TEST(NeoPGTest, openpg_trust_packet_test) {
+TEST(NeoPGTest, openpgp_trust_packet_test) {
   {
     std::stringstream out;
     TrustPacket packet;
@@ -27,10 +27,17 @@ TEST(NeoPGTest, openpg_trust_packet_test) {
   {
     // Test parser.
     const auto trust = std::vector<uint8_t>{0x01, 0x02, 0x03, 0x04};
-    ASSERT_NO_THROW(TrustPacket((const char*)trust.data(), trust.size()));
+    ParserInput in{(const char*)trust.data(), trust.size()};
 
-    auto packet = TrustPacket{(const char*)trust.data(), trust.size()};
-    ASSERT_EQ(packet.m_data, trust);
+    {
+      ParserInput::Mark mark(in);
+      ASSERT_NO_THROW(TrustPacket::create_or_throw(in));
+      ASSERT_EQ(in.position(), trust.size());
+    }
+    ASSERT_EQ(in.position(), 0);
+    auto packet = TrustPacket::create(in);
+    ASSERT_NE(packet, nullptr);
+    ASSERT_EQ(packet->m_data, trust);
 
     // Will never throw, so no failure tests.
   }

@@ -5,12 +5,16 @@
 
 add_executable(test-libneopg
   # Pure unit tests are located alongside the implementation.
-  ../openpgp/packet_header_tests.cpp
   ../openpgp/marker_packet_tests.cpp
   ../openpgp/literal_data_packet_tests.cpp
+  #../openpgp/packet_tests.cpp
+  ../openpgp/packet_header_tests.cpp
+  ../openpgp/public_key_material_tests.cpp
+  ../openpgp/public_key_packet_tests.cpp
   ../openpgp/user_id_packet_tests.cpp
   ../openpgp/user_attribute_packet_tests.cpp
   ../openpgp/modification_detection_code_packet_tests.cpp
+  ../openpgp/multiprecision_integer_tests.cpp
   ../openpgp/symmetrically_encrypted_integrity_protected_data_packet_tests.cpp
   ../openpgp/symmetrically_encrypted_data_packet_tests.cpp
   ../openpgp/compressed_data_packet_tests.cpp

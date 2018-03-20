@@ -6,7 +6,9 @@
 #pragma once
 
 #include <neopg/packet.h>
+#include <neopg/parser_input.h>
 
+#include <memory>
 #include <vector>
 
 namespace NeoPG {
@@ -20,6 +22,11 @@ namespace NeoPG {
 /// PacketLengthType::OneOctet (this is not enforced by this class, but it is
 /// the default behaviour).
 struct NEOPG_UNSTABLE_API ModificationDetectionCodePacket : Packet {
+  static std::unique_ptr<ModificationDetectionCodePacket> create(
+      ParserInput& input);
+  static std::unique_ptr<ModificationDetectionCodePacket> create_or_throw(
+      ParserInput& input);
+
   /// The MDC data, must be 20 bytes (SHA-1).
   std::vector<uint8_t> m_data;
 
@@ -27,7 +34,6 @@ struct NEOPG_UNSTABLE_API ModificationDetectionCodePacket : Packet {
   PacketType type() const override;
 
   ModificationDetectionCodePacket() = default;
-  ModificationDetectionCodePacket(const char* data, size_t len);
 };
 
 }  // namespace NeoPG

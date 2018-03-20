@@ -5,6 +5,8 @@
 
 #include <neopg/marker_packet.h>
 
+#include <neopg/intern/cplusplus.h>
+
 #include <gtest/gtest.h>
 
 #include <memory>
@@ -12,14 +14,14 @@
 
 using namespace NeoPG;
 
-TEST(NeoPGTest, openpg_marker_packet_test) {
+TEST(NeoPGTest, openpgp_marker_packet_test) {
   {
     // Test old packet header.
     std::stringstream out;
     MarkerPacket packet;
-    OldPacketHeader* header = new OldPacketHeader(PacketType::Marker, 3);
 
-    packet.m_header = std::unique_ptr<PacketHeader>(header);
+    packet.m_header =
+        NeoPG::make_unique<OldPacketHeader>(PacketType::Marker, 3);
     packet.write(out);
     ASSERT_EQ(out.str(), "\xa8\x03PGP");
   }
@@ -34,11 +36,52 @@ TEST(NeoPGTest, openpg_marker_packet_test) {
   }
 
   {
-    // Test parser.
-    ASSERT_ANY_THROW(MarkerPacket("PGPx", 4));
-    ASSERT_ANY_THROW(MarkerPacket("PGP", 2));
-    ASSERT_ANY_THROW(MarkerPacket("GPG", 3));
+    // Test parser (good).
+    ParserInput in("PGP", 3);
+    {
+      ParserInput::Mark mark(in);
+      ASSERT_NO_THROW(MarkerPacket::create_or_throw(in));
+      ASSERT_EQ(in.position(), 3);
+    }
+    ASSERT_EQ(in.position(), 0);
+    {
+      ParserInput::Mark mark(in);
+      ASSERT_NE(MarkerPacket::create(in), nullptr);
+      ASSERT_EQ(in.position(), 3);
+    }
+  }
 
-    ASSERT_NO_THROW(MarkerPacket("PGP", 3));
+  {
+    // Test parser error (no EOF).
+    ParserInput in("PGPx", 4);
+    {
+      ParserInput::Mark mark(in);
+      ASSERT_ANY_THROW(MarkerPacket::create_or_throw(in));
+      ASSERT_EQ(in.position(), 3);
+    }
+    ASSERT_EQ(in.position(), 0);
+    {
+      ParserInput::Mark mark(in);
+      ASSERT_EQ(MarkerPacket::create(in), nullptr);
+      ASSERT_EQ(in.position(), 3);
+    }
+  }
+
+  {
+    // Test parser error (short input).
+    ParserInput in("PGP", 2);
+    ASSERT_ANY_THROW(MarkerPacket::create_or_throw(in));
+    ASSERT_EQ(in.position(), 0);
+
+    ASSERT_EQ(MarkerPacket::create(in), nullptr);
+  }
+
+  {
+    // Test parser error (wrong input).
+    ParserInput in("GPG", 3);
+    ASSERT_ANY_THROW(MarkerPacket::create_or_throw(in));
+    ASSERT_EQ(in.position(), 0);
+
+    ASSERT_EQ(MarkerPacket::create(in), nullptr);
   }
 }

@@ -9,6 +9,7 @@
 
 #include <neopg/marker_packet.h>
 #include <neopg/openpgp.h>
+#include <neopg/public_key_packet.h>
 #include <neopg/raw_packet.h>
 #include <neopg/stream.h>
 #include <neopg/user_id_packet.h>
@@ -56,7 +57,10 @@ struct LegacyPacketSink : public RawPacketSink {
               << " tag=" << (int)header->type() << " hlen=" << head.length()
               << " plen=" << length << (new_header ? " new-ctb" : "") << "\n";
 
-    auto packet = Packet::create(header->type(), data, length);
+    // FIXME: Catch exception in nested parsing, show useful debug output,
+    // default to raw.
+    ParserInput in{data, length};
+    auto packet = Packet::create_or_throw(header->type(), in);
     packet->m_header = std::move(header);
     switch (packet->type()) {
       case PacketType::Marker:
@@ -67,6 +71,12 @@ struct LegacyPacketSink : public RawPacketSink {
         assert(uid);
         json str = uid->m_content;
         std::cout << ":user ID packet: " << str << "\n";
+      } break;
+      case PacketType::PublicKey: {
+        auto pub = dynamic_cast<PublicKeyPacket*>(packet.get());
+        assert(pub);
+        std::cout << ":public key packet:\n";
+        std::cout << "\tversion " << static_cast<int>(pub->version()) << "\n";
       } break;
       default:
         break;

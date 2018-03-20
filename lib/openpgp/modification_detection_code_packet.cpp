@@ -5,6 +5,7 @@
 
 #include <neopg/modification_detection_code_packet.h>
 
+#include <neopg/intern/cplusplus.h>
 #include <neopg/intern/pegtl.h>
 
 using namespace NeoPG;
@@ -24,13 +25,32 @@ template <>
 struct action<mdc> {
   template <typename Input>
   static void apply(const Input& in, ModificationDetectionCodePacket* packet) {
-    auto begin = (const uint8_t*)in.begin();
+    auto begin = reinterpret_cast<const uint8_t*>(in.begin());
     packet->m_data.assign(begin, begin + in.size());
   }
 };
 
 }  // namespace modification_detection_code
 }  // namespace NeoPG
+
+std::unique_ptr<ModificationDetectionCodePacket>
+ModificationDetectionCodePacket::create(ParserInput& in) {
+  try {
+    return ModificationDetectionCodePacket::create_or_throw(in);
+  } catch (const pegtl::parse_error&) {
+    return nullptr;
+  }
+}
+
+std::unique_ptr<ModificationDetectionCodePacket>
+ModificationDetectionCodePacket::create_or_throw(ParserInput& in) {
+  auto packet = NeoPG::make_unique<ModificationDetectionCodePacket>();
+
+  pegtl::parse<modification_detection_code::grammar,
+               modification_detection_code::action>(in.m_impl->m_input,
+                                                    packet.get());
+  return packet;
+}
 
 void ModificationDetectionCodePacket::write_body(std::ostream& out) const {
   if (m_data.size() != 20) {
@@ -42,11 +62,4 @@ void ModificationDetectionCodePacket::write_body(std::ostream& out) const {
 
 PacketType ModificationDetectionCodePacket::type() const {
   return PacketType::ModificationDetectionCode;
-}
-
-ModificationDetectionCodePacket::ModificationDetectionCodePacket(
-    const char* data, size_t len) {
-  pegtl::memory_input<> in{data, len, "ModificationDetectionCodePacket"};
-  pegtl::parse<modification_detection_code::grammar,
-               modification_detection_code::action>(in, this);
 }

@@ -12,7 +12,7 @@
 
 using namespace NeoPG;
 
-TEST(NeoPGTest, openpg_user_id_packet_test) {
+TEST(NeoPGTest, openpgp_user_id_packet_test) {
   {
     // Test old packet header.
     std::stringstream out;
@@ -34,11 +34,18 @@ TEST(NeoPGTest, openpg_user_id_packet_test) {
 
   {
     // Test parser.
-    const auto uid = std::string{"jonny@example.com"};
-    ASSERT_NO_THROW(UserIdPacket(uid.data(), uid.length()));
+    auto uid = std::string{"jonny@example.com"};
+    ParserInput in{uid.data(), uid.length()};
+    {
+      ParserInput::Mark mark(in);
+      ASSERT_NO_THROW(UserIdPacket::create_or_throw(in));
+      ASSERT_EQ(in.position(), uid.length());
+    }
 
-    auto packet = UserIdPacket(uid.data(), uid.length());
-    ASSERT_EQ(packet.m_content, uid);
+    ASSERT_EQ(in.position(), 0);
+    auto packet = UserIdPacket::create_or_throw(in);
+    ASSERT_NE(packet, nullptr);
+    ASSERT_EQ(packet->m_content, uid);
 
     // Will never throw, so no failure tests.
   }
