@@ -24,6 +24,7 @@ set(NeopgHeaders
   openpgp/user_attribute_packet.h
   openpgp/user_id_packet.h
   parser/openpgp.h
+  parser/parser_input.h
   proto/http.h
   proto/uri.h
   utils/common.h
@@ -46,6 +47,7 @@ add_library(neopg
   openpgp/user_attribute_packet.cpp
   openpgp/user_id_packet.cpp
   parser/openpgp.cpp
+  parser/parser_input.cpp
   proto/http.cpp
   proto/uri.cpp
   utils/stream.cpp
