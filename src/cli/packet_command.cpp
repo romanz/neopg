@@ -73,10 +73,58 @@ struct LegacyPacketSink : public RawPacketSink {
         std::cout << ":user ID packet: " << str << "\n";
       } break;
       case PacketType::PublicKey: {
+        PublicKeyMaterial* key = nullptr;
         auto pub = dynamic_cast<PublicKeyPacket*>(packet.get());
         assert(pub);
         std::cout << ":public key packet:\n";
-        std::cout << "\tversion " << static_cast<int>(pub->version()) << "\n";
+        switch (pub->version()) {
+          case PublicKeyPacket::Version::V2:
+          case PublicKeyPacket::Version::V3: {
+            auto v3pub = dynamic_cast<V2o3PublicKeyPacket*>(pub);
+            std::cout << "\tversion " << static_cast<int>(pub->version())
+                      << ", algo " << static_cast<int>(v3pub->m_algorithm)
+                      << ", created " << v3pub->m_created << ", expires "
+                      << v3pub->m_days_valid << "\n";
+            key = v3pub->m_key.get();
+          } break;
+          case PublicKeyPacket::Version::V4: {
+            auto v4pub = dynamic_cast<V4PublicKeyPacket*>(pub);
+            std::cout << "\tversion " << static_cast<int>(pub->version())
+                      << ", algo " << static_cast<int>(v4pub->m_algorithm)
+                      << ", created " << v4pub->m_created << ", expires 0"
+                      << "\n";
+            key = v4pub->m_key.get();
+          } break;
+          default:
+            std::cout << "\tversion " << static_cast<int>(pub->version())
+                      << "\n";
+            break;
+        }
+        if (key) {
+          switch (key->algorithm()) {
+            case PublicKeyAlgorithm::Rsa: {
+              auto rsa = dynamic_cast<RsaPublicKeyMaterial*>(key);
+              std::cout << "\tpkey[0]: [" << rsa->m_n.length() << " bits]\n";
+              std::cout << "\tpkey[1]: [" << rsa->m_e.length() << " bits]\n";
+            } break;
+            case PublicKeyAlgorithm::Dsa: {
+              auto dsa = dynamic_cast<DsaPublicKeyMaterial*>(key);
+              std::cout << "\tpkey[0]: [" << dsa->m_p.length() << " bits]\n";
+              std::cout << "\tpkey[1]: [" << dsa->m_q.length() << " bits]\n";
+              std::cout << "\tpkey[2]: [" << dsa->m_g.length() << " bits]\n";
+              std::cout << "\tpkey[3]: [" << dsa->m_y.length() << " bits]\n";
+            } break;
+            case PublicKeyAlgorithm::Elgamal: {
+              auto elgamal = dynamic_cast<ElgamalPublicKeyMaterial*>(key);
+              std::cout << "\tpkey[0]: [" << elgamal->m_p.length()
+                        << " bits]\n";
+              std::cout << "\tpkey[1]: [" << elgamal->m_g.length()
+                        << " bits]\n";
+              std::cout << "\tpkey[2]: [" << elgamal->m_y.length()
+                        << " bits]\n";
+            } break;
+          }
+        }
       } break;
       default:
         break;
