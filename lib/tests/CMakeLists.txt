@@ -9,6 +9,7 @@ add_executable(test-libneopg
   ../openpgp/literal_data_packet_tests.cpp
   #../openpgp/packet_tests.cpp
   ../openpgp/packet_header_tests.cpp
+  ../openpgp/public_key_data_tests.cpp
   ../openpgp/public_key_material_tests.cpp
   ../openpgp/public_key_packet_tests.cpp
   ../openpgp/user_id_packet_tests.cpp

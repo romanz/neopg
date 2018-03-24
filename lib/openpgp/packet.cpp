@@ -26,6 +26,8 @@ std::unique_ptr<Packet> Packet::create_or_throw(PacketType type,
       return UserIdPacket::create_or_throw(in);
     case PacketType::PublicKey:
       return PublicKeyPacket::create_or_throw(in);
+    case PacketType::PublicSubkey:
+      return PublicSubkeyPacket::create_or_throw(in);
     default:
       // Should we do this?
       return NeoPG::make_unique<RawPacket>(

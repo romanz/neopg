@@ -18,6 +18,7 @@ set(NeopgHeaders
   openpgp/multiprecision_integer.h
   openpgp/packet_header.h
   openpgp/packet.h
+  openpgp/public_key_data.h
   openpgp/public_key_material.h
   openpgp/public_key_packet.h
   openpgp/raw_packet.h
@@ -44,6 +45,7 @@ add_library(neopg
   openpgp/multiprecision_integer.cpp
   openpgp/packet_header.cpp
   openpgp/packet.cpp
+  openpgp/public_key_data.cpp
   openpgp/public_key_material.cpp
   openpgp/public_key_packet.cpp
   openpgp/raw_packet.cpp

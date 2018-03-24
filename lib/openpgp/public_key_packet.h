@@ -6,7 +6,7 @@
 #pragma once
 
 #include <neopg/packet.h>
-#include <neopg/public_key_material.h>
+#include <neopg/public_key_data.h>
 
 #include <memory>
 
@@ -16,45 +16,25 @@ namespace NeoPG {
 /// packet](https://tools.ietf.org/html/rfc4880#section-5.5.2).
 class NEOPG_UNSTABLE_API PublicKeyPacket : public Packet {
  public:
-  enum class Version : uint8_t { V2 = 2, V3 = 3, V4 = 4 };
-
   static std::unique_ptr<PublicKeyPacket> create_or_throw(ParserInput& input);
   static std::unique_ptr<PublicKeyPacket> create(ParserInput& input);
 
-  virtual Version version() const noexcept = 0;
+  std::unique_ptr<PublicKeyData> m_public_key;
 
+  void write_body(std::ostream& out) const override;
   PacketType type() const override { return PacketType::PublicKey; };
 };
 
-class NEOPG_UNSTABLE_API V2o3PublicKeyPacket : public PublicKeyPacket {
+class NEOPG_UNSTABLE_API PublicSubkeyPacket : public Packet {
  public:
-  // V2 and V3 keys are identical but for the version number.
-  Version m_version;
+  static std::unique_ptr<PublicSubkeyPacket> create_or_throw(
+      ParserInput& input);
+  static std::unique_ptr<PublicSubkeyPacket> create(ParserInput& input);
 
-  uint32_t m_created{0};
-  uint16_t m_days_valid{0};
-  PublicKeyAlgorithm m_algorithm{PublicKeyAlgorithm::Rsa};
-  std::unique_ptr<PublicKeyMaterial> m_key;
-
-  static std::unique_ptr<V2o3PublicKeyPacket> create_or_throw(
-      Version version, ParserInput& input);
+  std::unique_ptr<PublicKeyData> m_public_key;
 
   void write_body(std::ostream& out) const override;
-
-  Version version() const noexcept override { return m_version; }
-  V2o3PublicKeyPacket(Version version) : m_version{version} {};
-};
-
-class NEOPG_UNSTABLE_API V4PublicKeyPacket : public PublicKeyPacket {
- public:
-  uint32_t m_created{0};
-  PublicKeyAlgorithm m_algorithm{PublicKeyAlgorithm::Rsa};
-  std::unique_ptr<PublicKeyMaterial> m_key;
-
-  static std::unique_ptr<V4PublicKeyPacket> create_or_throw(ParserInput& input);
-
-  void write_body(std::ostream& out) const override;
-  Version version() const noexcept override { return Version::V4; }
+  PacketType type() const override { return PacketType::PublicSubkey; };
 };
 
 }  // namespace NeoPG

@@ -17,6 +17,7 @@ std::unique_ptr<PublicKeyMaterial> PublicKeyMaterial::create_or_throw(
     case PublicKeyAlgorithm::Dsa:
       return DsaPublicKeyMaterial::create_or_throw(in);
     case PublicKeyAlgorithm::Elgamal:
+    case PublicKeyAlgorithm::ElgamalEncrypt:
       return ElgamalPublicKeyMaterial::create_or_throw(in);
     default:
       in.error("unknown public key algorithm");
