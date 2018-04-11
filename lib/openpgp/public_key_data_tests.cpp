@@ -1,4 +1,4 @@
-// OpenPGP public key packet (tests)
+// OpenPGP public key packet data (tests)
 // Copyright 2018 The NeoPG developers
 //
 // NeoPG is released under the Simplified BSD License (see license.txt)
@@ -16,16 +16,15 @@ TEST(NeoPGTest, openpgp_public_key_data_test) {
   {
     // Test V3 packets.
     const std::string raw{
-        "\x03"
         "\x12\x34\x56\x78"
         "\xab\xcd"
         "\x01"
         "\x00\x11\x01\x42\x23"
         "\x00\x02\x03",
-        16};
+        15};
     ParserInput in(raw.data(), raw.length());
-    auto key = PublicKeyData::create_or_throw(in);
-    ASSERT_EQ(key->version(), PublicKeyData::Version::V3);
+    auto key = PublicKeyData::create_or_throw(PublicKeyVersion::V3, in);
+    ASSERT_EQ(key->version(), PublicKeyVersion::V3);
     auto v3key = dynamic_cast<V2o3PublicKeyData*>(key.get());
     ASSERT_NE(v3key, nullptr);
     ASSERT_EQ(v3key->m_created, 0x12345678);
@@ -37,4 +36,5 @@ TEST(NeoPGTest, openpgp_public_key_data_test) {
     ASSERT_EQ(rsa->m_n, MultiprecisionInteger(0x14223));
     ASSERT_EQ(rsa->m_e, MultiprecisionInteger(0x3));
   }
+  // FIXME: More tests (writing packet).
 }

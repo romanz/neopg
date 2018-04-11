@@ -1,9 +1,9 @@
-// OpenPGP public key packet (implementation)
+// OpenPGP public key packet data (implementation)
 // Copyright 2018 The NeoPG developers
 //
 // NeoPG is released under the Simplified BSD License (see license.txt)
 
-#include <neopg/public_key_packet.h>
+#include <neopg/public_key_data.h>
 
 #include <neopg/intern/cplusplus.h>
 #include <neopg/intern/pegtl.h>
@@ -13,7 +13,7 @@
 using namespace NeoPG;
 
 namespace NeoPG {
-namespace public_key_packet {
+namespace public_key_data {
 using namespace pegtl;
 
 struct algorithm : must<any> {};
@@ -21,8 +21,6 @@ struct algorithm : must<any> {};
 struct created : must<bytes<4>> {};
 
 struct days_valid : must<bytes<2>> {};
-
-struct version : must<any> {};
 
 template <typename Rule>
 struct action : nothing<Rule> {};
@@ -44,8 +42,8 @@ struct action<created> {
     auto val2 = (uint32_t)in.peek_byte(2);
     auto val3 = (uint32_t)in.peek_byte(3);
     created = (val0 << 24) + (val1 << 16) + (val2 << 8) + val3;
-  }  // namespace public_key_packet
-};   // namespace NeoPG
+  }
+};
 
 template <>
 struct action<days_valid> {
@@ -57,30 +55,20 @@ struct action<days_valid> {
   }
 };
 
-template <>
-struct action<version> {
-  template <typename Input>
-  static void apply(const Input& in, PublicKeyData::Version& version) {
-    version = static_cast<PublicKeyData::Version>(in.peek_byte());
-  }
-};
-
-}  // namespace public_key_packet
+}  // namespace public_key_data
 }  // namespace NeoPG
 
-std::unique_ptr<PublicKeyData> PublicKeyData::create_or_throw(ParserInput& in) {
+std::unique_ptr<PublicKeyData> PublicKeyData::create_or_throw(
+    PublicKeyVersion version, ParserInput& in) {
   // std::string orig_data{in.current(), in.size()};
 
   std::unique_ptr<PublicKeyData> public_key;
-  Version version;
-  pegtl::parse<public_key_packet::version, public_key_packet::action>(
-      in.m_impl->m_input, version);
   switch (version) {
-    case Version::V2:
-    case Version::V3:
+    case PublicKeyVersion::V2:
+    case PublicKeyVersion::V3:
       public_key = V2o3PublicKeyData::create_or_throw(version, in);
       break;
-    case Version::V4:
+    case PublicKeyVersion::V4:
       public_key = V4PublicKeyData::create_or_throw(in);
       break;
     default:
@@ -98,14 +86,14 @@ std::unique_ptr<PublicKeyData> PublicKeyData::create_or_throw(ParserInput& in) {
 }
 
 std::unique_ptr<V2o3PublicKeyData> V2o3PublicKeyData::create_or_throw(
-    Version version, ParserInput& in) {
+    PublicKeyVersion version, ParserInput& in) {
   auto packet = make_unique<V2o3PublicKeyData>(version);
 
-  pegtl::parse<public_key_packet::created, public_key_packet::action>(
+  pegtl::parse<public_key_data::created, public_key_data::action>(
       in.m_impl->m_input, packet->m_created);
-  pegtl::parse<public_key_packet::days_valid, public_key_packet::action>(
+  pegtl::parse<public_key_data::days_valid, public_key_data::action>(
       in.m_impl->m_input, packet->m_days_valid);
-  pegtl::parse<public_key_packet::algorithm, public_key_packet::action>(
+  pegtl::parse<public_key_data::algorithm, public_key_data::action>(
       in.m_impl->m_input, packet->m_algorithm);
 
   packet->m_key = PublicKeyMaterial::create_or_throw(packet->m_algorithm, in);
@@ -123,7 +111,6 @@ std::unique_ptr<V2o3PublicKeyData> V2o3PublicKeyData::create_or_throw(
 }
 
 void V2o3PublicKeyData::write(std::ostream& out) const {
-  out << static_cast<uint8_t>(m_version);
   out << static_cast<uint8_t>(m_created >> 24)
       << static_cast<uint8_t>(m_created >> 16)
       << static_cast<uint8_t>(m_created >> 8)
@@ -160,9 +147,9 @@ std::unique_ptr<V4PublicKeyData> V4PublicKeyData::create_or_throw(
     ParserInput& in) {
   auto packet = make_unique<V4PublicKeyData>();
 
-  pegtl::parse<public_key_packet::created, public_key_packet::action>(
+  pegtl::parse<public_key_data::created, public_key_data::action>(
       in.m_impl->m_input, packet->m_created);
-  pegtl::parse<public_key_packet::algorithm, public_key_packet::action>(
+  pegtl::parse<public_key_data::algorithm, public_key_data::action>(
       in.m_impl->m_input, packet->m_algorithm);
 
   packet->m_key = PublicKeyMaterial::create_or_throw(packet->m_algorithm, in);
@@ -172,7 +159,6 @@ std::unique_ptr<V4PublicKeyData> V4PublicKeyData::create_or_throw(
 }
 
 void V4PublicKeyData::write(std::ostream& out) const {
-  out << static_cast<uint8_t>(Version::V4);
   out << static_cast<uint8_t>(m_created >> 24)
       << static_cast<uint8_t>(m_created >> 16)
       << static_cast<uint8_t>(m_created >> 8)

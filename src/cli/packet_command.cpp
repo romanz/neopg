@@ -43,8 +43,8 @@ void UserIdPacketCommand::run() {
 static void output_public_key_data(PublicKeyData* pub) {
   PublicKeyMaterial* key = nullptr;
   switch (pub->version()) {
-    case PublicKeyData::Version::V2:
-    case PublicKeyData::Version::V3: {
+    case PublicKeyVersion::V2:
+    case PublicKeyVersion::V3: {
       auto v3pub = dynamic_cast<V2o3PublicKeyData*>(pub);
       std::cout << "\tversion " << static_cast<int>(pub->version()) << ", algo "
                 << static_cast<int>(v3pub->m_algorithm) << ", created "
@@ -52,7 +52,7 @@ static void output_public_key_data(PublicKeyData* pub) {
                 << "\n";
       key = v3pub->m_key.get();
     } break;
-    case PublicKeyData::Version::V4: {
+    case PublicKeyVersion::V4: {
       auto v4pub = dynamic_cast<V4PublicKeyData*>(pub);
       std::cout << "\tversion " << static_cast<int>(pub->version()) << ", algo "
                 << static_cast<int>(v4pub->m_algorithm) << ", created "
@@ -113,37 +113,41 @@ struct LegacyPacketSink : public RawPacketSink {
 
     // FIXME: Catch exception in nested parsing, show useful debug output,
     // default to raw.
-    ParserInput in{data, length};
-    auto packet = Packet::create_or_throw(header->type(), in);
-    packet->m_header = std::move(header);
-    switch (packet->type()) {
-      case PacketType::Marker:
-        std::cout << ":marker packet: PGP\n";
-        break;
-      case PacketType::UserId: {
-        auto uid = dynamic_cast<UserIdPacket*>(packet.get());
-        assert(uid);
-        json str = uid->m_content;
-        std::cout << ":user ID packet: " << str << "\n";
-      } break;
-      case PacketType::PublicKey: {
-        auto pubkey = dynamic_cast<PublicKeyPacket*>(packet.get());
-        assert(pubkey);
-        auto pub = dynamic_cast<PublicKeyData*>(pubkey->m_public_key.get());
-        assert(pub);
-        std::cout << ":public key packet:\n";
-        output_public_key_data(pub);
-      } break;
-      case PacketType::PublicSubkey: {
-        auto pubkey = dynamic_cast<PublicSubkeyPacket*>(packet.get());
-        assert(pubkey);
-        auto pub = dynamic_cast<PublicKeyData*>(pubkey->m_public_key.get());
-        assert(pub);
-        std::cout << ":public sub key packet:\n";
-        output_public_key_data(pub);
-      } break;
-      default:
-        break;
+    try {
+      ParserInput in{data, length};
+      auto packet = Packet::create_or_throw(header->type(), in);
+      packet->m_header = std::move(header);
+      switch (packet->type()) {
+        case PacketType::Marker:
+          std::cout << ":marker packet: PGP\n";
+          break;
+        case PacketType::UserId: {
+          auto uid = dynamic_cast<UserIdPacket*>(packet.get());
+          assert(uid);
+          json str = uid->m_content;
+          std::cout << ":user ID packet: " << str << "\n";
+        } break;
+        case PacketType::PublicKey: {
+          auto pubkey = dynamic_cast<PublicKeyPacket*>(packet.get());
+          assert(pubkey);
+          auto pub = dynamic_cast<PublicKeyData*>(pubkey->m_public_key.get());
+          assert(pub);
+          std::cout << ":public key packet:\n";
+          output_public_key_data(pub);
+        } break;
+        case PacketType::PublicSubkey: {
+          auto pubkey = dynamic_cast<PublicSubkeyPacket*>(packet.get());
+          assert(pubkey);
+          auto pub = dynamic_cast<PublicKeyData*>(pubkey->m_public_key.get());
+          assert(pub);
+          std::cout << ":public sub key packet:\n";
+          output_public_key_data(pub);
+        } break;
+        default:
+          break;
+      }
+    } catch (const std::runtime_error& exc) {
+      std::cout << "ERROR:" << exc.what() << "\n";
     }
   }
   void start_packet(std::unique_ptr<PacketHeader> header){};

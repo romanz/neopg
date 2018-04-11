@@ -10,6 +10,26 @@
 
 using namespace NeoPG;
 
+namespace NeoPG {
+namespace public_key_packet {
+using namespace pegtl;
+
+struct version : must<any> {};
+
+template <typename Rule>
+struct action : nothing<Rule> {};
+
+template <>
+struct action<version> {
+  template <typename Input>
+  static void apply(const Input& in, PublicKeyVersion& version) {
+    version = static_cast<PublicKeyVersion>(in.peek_byte());
+  }
+};
+
+}  // namespace public_key_packet
+}  // namespace NeoPG
+
 std::unique_ptr<PublicKeyPacket> PublicKeyPacket::create(ParserInput& in) {
   try {
     return PublicKeyPacket::create_or_throw(in);
@@ -20,8 +40,13 @@ std::unique_ptr<PublicKeyPacket> PublicKeyPacket::create(ParserInput& in) {
 
 std::unique_ptr<PublicKeyPacket> PublicKeyPacket::create_or_throw(
     ParserInput& in) {
-  auto packet = make_unique<PublicKeyPacket>();
-  packet->m_public_key = PublicKeyData::create_or_throw(in);
+  PublicKeyVersion version;
+  pegtl::parse<public_key_packet::version, public_key_packet::action>(
+      in.m_impl->m_input, version);
+
+  auto packet = make_unique<PublicKeyPacket>(version);
+  packet->m_public_key = PublicKeyData::create_or_throw(version, in);
+
   return packet;
 }
 
@@ -40,11 +65,16 @@ std::unique_ptr<PublicSubkeyPacket> PublicSubkeyPacket::create(
 
 std::unique_ptr<PublicSubkeyPacket> PublicSubkeyPacket::create_or_throw(
     ParserInput& in) {
-  auto packet = make_unique<PublicSubkeyPacket>();
-  packet->m_public_key = PublicKeyData::create_or_throw(in);
+  PublicKeyVersion version;
+  pegtl::parse<public_key_packet::version, public_key_packet::action>(
+      in.m_impl->m_input, version);
+
+  auto packet = make_unique<PublicSubkeyPacket>(version);
+  packet->m_public_key = PublicKeyData::create_or_throw(packet->m_version, in);
   return packet;
 }
 
 void PublicSubkeyPacket::write_body(std::ostream& out) const {
+  out << static_cast<uint8_t>(m_version);
   if (m_public_key) m_public_key->write(out);
 }

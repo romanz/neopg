@@ -16,7 +16,7 @@ TEST(NeoPGTest, openpgp_public_key_packet_test) {
   {
     // Test old packet header.
     std::stringstream out;
-    PublicKeyPacket packet;
+    PublicKeyPacket packet{PublicKeyVersion::V4};
     OldPacketHeader* header = new OldPacketHeader(PacketType::PublicKey, 0);
 
     packet.m_header = std::unique_ptr<PacketHeader>(header);
@@ -28,7 +28,7 @@ TEST(NeoPGTest, openpgp_public_key_packet_test) {
   {
     // Test new packet header.
     std::stringstream out;
-    PublicKeyPacket packet;
+    PublicKeyPacket packet{PublicKeyVersion::V4};
     packet.write(out);
     ASSERT_EQ(out.str(), std::string("\xc6\x00", 2));
   }
@@ -45,8 +45,10 @@ TEST(NeoPGTest, openpgp_public_key_packet_test) {
         16};
     ParserInput in(raw.data(), raw.length());
     auto packet = PublicKeyPacket::create_or_throw(in);
+    ASSERT_EQ(packet->version(), PublicKeyVersion::V3);
     auto public_key = packet->m_public_key.get();
     ASSERT_NE(public_key, nullptr);
-    ASSERT_EQ(public_key->version(), PublicKeyData::Version::V3);
+    ASSERT_EQ(public_key->version(), PublicKeyVersion::V3);
   }
+  // FIXME: More tests (writing packet).
 }

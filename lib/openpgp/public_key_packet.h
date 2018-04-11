@@ -19,10 +19,15 @@ class NEOPG_UNSTABLE_API PublicKeyPacket : public Packet {
   static std::unique_ptr<PublicKeyPacket> create_or_throw(ParserInput& input);
   static std::unique_ptr<PublicKeyPacket> create(ParserInput& input);
 
+  PublicKeyVersion m_version;
   std::unique_ptr<PublicKeyData> m_public_key;
 
   void write_body(std::ostream& out) const override;
   PacketType type() const override { return PacketType::PublicKey; };
+
+  PublicKeyVersion version() const noexcept { return m_version; }
+
+  PublicKeyPacket(PublicKeyVersion version) : m_version{version} {};
 };
 
 class NEOPG_UNSTABLE_API PublicSubkeyPacket : public Packet {
@@ -31,10 +36,15 @@ class NEOPG_UNSTABLE_API PublicSubkeyPacket : public Packet {
       ParserInput& input);
   static std::unique_ptr<PublicSubkeyPacket> create(ParserInput& input);
 
+  PublicKeyVersion m_version;
   std::unique_ptr<PublicKeyData> m_public_key;
 
   void write_body(std::ostream& out) const override;
   PacketType type() const override { return PacketType::PublicSubkey; };
+
+  PublicKeyVersion version() const noexcept { return m_version; }
+
+  PublicSubkeyPacket(PublicKeyVersion version) : m_version{version} {};
 };
 
 }  // namespace NeoPG
