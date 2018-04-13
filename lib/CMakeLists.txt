@@ -21,7 +21,11 @@ set(NeopgHeaders
   openpgp/public_key_data.h
   openpgp/public_key_material.h
   openpgp/public_key_packet.h
+  openpgp/signature_packet.h
   openpgp/raw_packet.h
+  openpgp/signature_data.h
+  openpgp/signature_material.h
+  openpgp/signature_packet.h
   openpgp/symmetrically_encrypted_data_packet.h
   openpgp/symmetrically_encrypted_integrity_protected_data_packet.h
   openpgp/trust_packet.h
@@ -49,6 +53,9 @@ add_library(neopg
   openpgp/public_key_material.cpp
   openpgp/public_key_packet.cpp
   openpgp/raw_packet.cpp
+  openpgp/signature_data.cpp
+  openpgp/signature_material.cpp
+  openpgp/signature_packet.cpp
   openpgp/symmetrically_encrypted_data_packet.cpp
   openpgp/symmetrically_encrypted_integrity_protected_data_packet.cpp
   openpgp/trust_packet.cpp

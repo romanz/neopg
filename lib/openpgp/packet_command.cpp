@@ -11,7 +11,6 @@
 #include <neopg/openpgp.h>
 #include <neopg/public_key_packet.h>
 #include <neopg/raw_packet.h>
-#include <neopg/signature_packet.h>
 #include <neopg/stream.h>
 #include <neopg/user_id_packet.h>
 
@@ -44,8 +43,8 @@ void UserIdPacketCommand::run() {
 static void output_public_key_data(PublicKeyData* pub) {
   PublicKeyMaterial* key = nullptr;
   switch (pub->version()) {
-    case PublicKeyVersion::V2:
-    case PublicKeyVersion::V3: {
+    case PublicKeyData::Version::V2:
+    case PublicKeyData::Version::V3: {
       auto v3pub = dynamic_cast<V2o3PublicKeyData*>(pub);
       std::cout << "\tversion " << static_cast<int>(pub->version()) << ", algo "
                 << static_cast<int>(v3pub->m_algorithm) << ", created "
@@ -53,7 +52,7 @@ static void output_public_key_data(PublicKeyData* pub) {
                 << "\n";
       key = v3pub->m_key.get();
     } break;
-    case PublicKeyVersion::V4: {
+    case PublicKeyData::Version::V4: {
       auto v4pub = dynamic_cast<V4PublicKeyData*>(pub);
       std::cout << "\tversion " << static_cast<int>(pub->version()) << ", algo "
                 << static_cast<int>(v4pub->m_algorithm) << ", created "
@@ -91,45 +90,6 @@ static void output_public_key_data(PublicKeyData* pub) {
     auto keyid = pub->keyid();
     std::cout << "\tkeyid: " << Botan::hex_encode(keyid.data(), keyid.size())
               << "\n";
-  }
-}
-
-static void output_signature_data(SignatureData* sig) {
-  switch (sig->version()) {
-    case SignatureVersion::V3: {
-      auto v3sig = dynamic_cast<V3SignatureData*>(sig);
-      std::cout << "\tversion 3, created " << v3sig->m_created
-                << ", md5len 5, sigclass 0x"
-                << (boost::format("%02x") %
-                    static_cast<int>(v3sig->signature_type()))
-                << "\n";
-      std::cout << "\tdigest algo " << static_cast<int>(v3sig->hash_algorithm())
-                << ", begin of digest "
-                << (boost::format("%02x") %
-                    static_cast<int>(v3sig->m_quick.data()[0]))
-                << " "
-                << (boost::format("%02x") %
-                    static_cast<int>(v3sig->m_quick.data()[1]))
-                << "\n";
-    } break;
-    case SignatureVersion::V4: {
-      auto v4sig = dynamic_cast<V4SignatureData*>(sig);
-      // FIXME: Try to get created from subpackets.
-      std::cout << "\tversion 4, created 0, md5len 0, sigclass 0x"
-                << (boost::format("%02x") %
-                    static_cast<int>(v4sig->signature_type()))
-                << "\n";
-      std::cout << "\tdigest algo " << static_cast<int>(v4sig->hash_algorithm())
-                << ", begin of digest "
-                << (boost::format("%02x") %
-                    static_cast<int>(v4sig->m_quick.data()[0]))
-                << " "
-                << (boost::format("%02x") %
-                    static_cast<int>(v4sig->m_quick.data()[1]))
-                << "\n";
-    } break;
-    default:
-      break;
   }
 }
 
@@ -182,15 +142,6 @@ struct LegacyPacketSink : public RawPacketSink {
           assert(pub);
           std::cout << ":public sub key packet:\n";
           output_public_key_data(pub);
-        } break;
-        case PacketType::Signature: {
-          auto signature = dynamic_cast<SignaturePacket*>(packet.get());
-          assert(signature);
-          auto sig = dynamic_cast<SignatureData*>(signature->m_signature.get());
-          assert(sig);
-          std::cout << ":signature packet: algo "
-                    << static_cast<int>(sig->public_key_algorithm()) << "\n";
-          output_signature_data(sig);
         } break;
         default:
           break;

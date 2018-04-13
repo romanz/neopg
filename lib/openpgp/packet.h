@@ -17,6 +17,8 @@ struct NEOPG_UNSTABLE_API Packet {
                                                  ParserInput& in);
 
   /// Use this to overwrite the default header.
+  // FIXME: Replace this with a header-generator that comes in different
+  // flavors, see issue #66.
   std::unique_ptr<PacketHeader> m_header;
 
   void write(std::ostream& out) const;

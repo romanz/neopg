@@ -8,6 +8,7 @@
 #include <neopg/marker_packet.h>
 #include <neopg/public_key_packet.h>
 #include <neopg/raw_packet.h>
+#include <neopg/signature_packet.h>
 #include <neopg/user_id_packet.h>
 
 #include <neopg/parser_input.h>
@@ -28,6 +29,8 @@ std::unique_ptr<Packet> Packet::create_or_throw(PacketType type,
       return PublicKeyPacket::create_or_throw(in);
     case PacketType::PublicSubkey:
       return PublicSubkeyPacket::create_or_throw(in);
+    case PacketType::Signature:
+      return SignaturePacket::create_or_throw(in);
     default:
       // Should we do this?
       return NeoPG::make_unique<RawPacket>(

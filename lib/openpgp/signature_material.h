@@ -1,0 +1,87 @@
+// OpenPGP signature material
+// Copyright 2018 The NeoPG developers
+//
+// NeoPG is released under the Simplified BSD License (see license.txt)
+
+#pragma once
+
+#include <neopg/public_key_material.h>
+
+#include <neopg/multiprecision_integer.h>
+#include <neopg/parser_input.h>
+
+#include <memory>
+
+namespace NeoPG {
+
+/// Algorithm-specific key material for a
+/// [signature](https://tools.ietf.org/html/rfc4880#section-5.2).
+class NEOPG_UNSTABLE_API SignatureMaterial {
+ public:
+  /// Create an instance based on the algorithm.
+  /// @param algorithm algorithm specifier
+  /// @param input parser input with key material
+  /// Throws parse_error if input can not be parsed.
+  static std::unique_ptr<SignatureMaterial> create_or_throw(
+      PublicKeyAlgorithm algorithm, ParserInput& input);
+
+  /// @return the algorithm specifier
+  virtual PublicKeyAlgorithm algorithm() const = 0;
+
+  /// Write the key material to the output stream.
+  /// @param out output stream
+  virtual void write(std::ostream& out) const = 0;
+};
+
+/// Key material for RSA public keys.
+class NEOPG_UNSTABLE_API RsaSignatureMaterial : public SignatureMaterial {
+ public:
+  MultiprecisionInteger m_n;
+  MultiprecisionInteger m_e;
+
+  static std::unique_ptr<RsaSignatureMaterial> create_or_throw(
+      ParserInput& input);
+
+  PublicKeyAlgorithm algorithm() const override {
+    return PublicKeyAlgorithm::Rsa;
+  };
+
+  void write(std::ostream& out) const override;
+};
+
+/// Key material for DSA public keys.
+class NEOPG_UNSTABLE_API DsaSignatureMaterial : public SignatureMaterial {
+ public:
+  MultiprecisionInteger m_p;
+  MultiprecisionInteger m_q;
+  MultiprecisionInteger m_g;
+  MultiprecisionInteger m_y;  // g**x mod p (x secret)
+
+  static std::unique_ptr<DsaSignatureMaterial> create_or_throw(
+      ParserInput& input);
+
+  PublicKeyAlgorithm algorithm() const override {
+    return PublicKeyAlgorithm::Dsa;
+  };
+
+  void write(std::ostream& out) const override;
+};
+
+/// Key material for Elgamal public keys.
+class NEOPG_UNSTABLE_API ElgamalSignatureMaterial : public SignatureMaterial {
+ public:
+  MultiprecisionInteger m_p;
+  MultiprecisionInteger m_g;
+  MultiprecisionInteger m_y;  // g**x mod p (x secret)
+
+  static std::unique_ptr<ElgamalSignatureMaterial> create_or_throw(
+      ParserInput& input);
+
+  PublicKeyAlgorithm algorithm() const override {
+    return PublicKeyAlgorithm::Elgamal;
+  };
+
+  void write(std::ostream& out) const override;
+};
+
+}  // namespace NeoPG
