@@ -81,10 +81,10 @@ class NEOPG_UNSTABLE_API V3SignatureData : public SignatureData {
  public:
   SignatureType m_type{SignatureType::Binary};
   uint32_t m_created{0};
-  std::array<uint8_t, 8> m_signer{0, 0, 0, 0, 0, 0, 0, 0};
+  std::array<uint8_t, 8> m_signer{{0, 0, 0, 0, 0, 0, 0, 0}};
   PublicKeyAlgorithm m_public_key_algorithm{PublicKeyAlgorithm::Rsa};
   HashAlgorithm m_hash_algorithm{HashAlgorithm::Sha1};
-  std::array<uint8_t, 2> m_quick{0, 0};
+  std::array<uint8_t, 2> m_quick{{0, 0}};
   std::unique_ptr<SignatureMaterial> m_signature;
 
   static std::unique_ptr<V3SignatureData> create_or_throw(ParserInput& input);
@@ -112,7 +112,7 @@ class NEOPG_UNSTABLE_API V4SignatureData : public SignatureData {
   std::unique_ptr<SignatureMaterial> m_signature;
   // hashed subpacket data
   // unhashed subpacket data
-  std::array<uint8_t, 2> m_quick{0, 0};
+  std::array<uint8_t, 2> m_quick{{0, 0}};
 
   static std::unique_ptr<V4SignatureData> create_or_throw(ParserInput& input);
 
