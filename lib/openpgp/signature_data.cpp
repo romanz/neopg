@@ -33,6 +33,25 @@ struct public_key_algorithm : must<any> {};
 
 struct hash_algorithm : must<any> {};
 
+// A custom rule to match subpacket data.  This is stateful, because it requires
+// the preceeding length information, and matches exactly subpackets_length
+// bytes.
+struct subpackets_data {
+  using analyze_t = analysis::generic<analysis::rule_type::ANY>;
+  template <apply_mode A, rewind_mode M, template <typename...> class Action,
+            template <typename...> class Control, typename Input>
+  static bool match(Input& in, uint16_t& subpackets_length, int& subpackets) {
+    if (in.size(subpackets_length) >= subpackets_length) {
+      in.bump(subpackets_length);
+      return true;
+    }
+    return false;
+  }
+};
+
+struct subpackets_length : bytes<2> {};
+struct subpackets : must<subpackets_length, subpackets_data> {};
+
 template <typename Rule>
 struct action : nothing<Rule> {};
 
@@ -90,6 +109,26 @@ struct action<quick> {
   }
 };
 
+template <>
+struct action<subpackets_length> {
+  template <typename Input>
+  static void apply(const Input& in, uint16_t& length, int& subpackets) {
+    auto val0 = (uint32_t)in.peek_byte(0);
+    auto val1 = (uint32_t)in.peek_byte(1);
+    length = (val0 << 8) + val1;
+  }
+};
+
+template <>
+struct action<subpackets_data> {
+  template <typename Input>
+  static void apply(const Input& in, uint16_t& length, int& subpackets) {
+    ParserInput in2(in.begin(), in.size());
+    // FIXME: parse it.
+    subpackets = in2.size();
+  }
+};
+
 }  // namespace signature_data
 }  // namespace NeoPG
 
@@ -97,8 +136,9 @@ std::unique_ptr<SignatureData> SignatureData::create_or_throw(
     SignatureVersion version, ParserInput& in) {
   std::unique_ptr<SignatureData> signature;
   switch (version) {
+    case SignatureVersion::V2:
     case SignatureVersion::V3:
-      signature = V3SignatureData::create_or_throw(in);
+      signature = V2o3SignatureData::create_or_throw(version, in);
       break;
     case SignatureVersion::V4:
       signature = V4SignatureData::create_or_throw(in);
@@ -111,9 +151,10 @@ std::unique_ptr<SignatureData> SignatureData::create_or_throw(
   return signature;
 }
 
-std::unique_ptr<V3SignatureData> V3SignatureData::create_or_throw(
-    ParserInput& in) {
-  auto packet = make_unique<V3SignatureData>();
+std::unique_ptr<V2o3SignatureData> V2o3SignatureData::create_or_throw(
+    SignatureVersion version, ParserInput& in) {
+  auto packet = make_unique<V2o3SignatureData>();
+  packet->m_version = version;
   // Not very elegant, but makes it easier to reuse the same actions.
   pegtl::parse<signature_data::v3_hashed, signature_data::action>(
       in.m_impl->m_input);
@@ -130,8 +171,8 @@ std::unique_ptr<V3SignatureData> V3SignatureData::create_or_throw(
   pegtl::parse<signature_data::quick, signature_data::action>(
       in.m_impl->m_input, packet->m_quick);
 
-  // packet->m_signature =
-  // SignatureMaterial::create_or_throw(packet->m_public_key_algorithm, in);
+  packet->m_signature =
+      SignatureMaterial::create_or_throw(packet->m_public_key_algorithm, in);
 #if 0
   switch (packet->m_public_key_algorithm) {
     case PublicKeyAlgorithm::Rsa:
@@ -146,19 +187,17 @@ std::unique_ptr<V3SignatureData> V3SignatureData::create_or_throw(
   return packet;
 }
 
-void V3SignatureData::write(std::ostream& out) const {
+void V2o3SignatureData::write(std::ostream& out) const {
   out << static_cast<uint8_t>(0x05);
   out << static_cast<uint8_t>(m_type);
   out << static_cast<uint8_t>(m_created >> 24)
       << static_cast<uint8_t>(m_created >> 16)
       << static_cast<uint8_t>(m_created >> 8)
       << static_cast<uint8_t>(m_created);
-  std::copy(std::begin(m_signer), std::end(m_signer),
-            std::ostream_iterator<uint8_t>(out));
+  out.write(reinterpret_cast<const char*>(m_signer.data()), m_signer.size());
   out << static_cast<uint8_t>(m_public_key_algorithm);
   out << static_cast<uint8_t>(m_hash_algorithm);
-  std::copy(std::begin(m_quick), std::end(m_quick),
-            std::ostream_iterator<uint8_t>(out));
+  out.write(reinterpret_cast<const char*>(m_quick.data()), m_quick.size());
   // FIXME: Really optional?  (Useful for testing)
   // if (m_key) m_key->write(out);
 }
@@ -173,13 +212,18 @@ std::unique_ptr<V4SignatureData> V4SignatureData::create_or_throw(
       in.m_impl->m_input, packet->m_public_key_algorithm);
   pegtl::parse<signature_data::hash_algorithm, signature_data::action>(
       in.m_impl->m_input, packet->m_hash_algorithm);
-  // hashed
-  // unhashed
+
+  uint16_t length;
+  pegtl::parse<signature_data::subpackets, signature_data::action>(
+      in.m_impl->m_input, length, packet->m_hashed_subpackets);
+  pegtl::parse<signature_data::subpackets, signature_data::action>(
+      in.m_impl->m_input, length, packet->m_unhashed_subpackets);
+
   pegtl::parse<signature_data::quick, signature_data::action>(
       in.m_impl->m_input, packet->m_quick);
 
-  // packet->m_signature =
-  // SignatureMaterial::create_or_throw(packet->m_public_key_algorithm, in);
+  packet->m_signature =
+      SignatureMaterial::create_or_throw(packet->m_public_key_algorithm, in);
 #if 0
   switch (packet->m_public_key_algorithm) {
     case PublicKeyAlgorithm::Rsa:
@@ -194,4 +238,6 @@ std::unique_ptr<V4SignatureData> V4SignatureData::create_or_throw(
   return packet;
 }
 
-void V4SignatureData::write(std::ostream& out) const {}
+void V4SignatureData::write(std::ostream& out) const {
+  out.write(reinterpret_cast<const char*>(m_quick.data()), m_quick.size());
+}

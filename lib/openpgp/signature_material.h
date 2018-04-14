@@ -36,8 +36,7 @@ class NEOPG_UNSTABLE_API SignatureMaterial {
 /// Key material for RSA public keys.
 class NEOPG_UNSTABLE_API RsaSignatureMaterial : public SignatureMaterial {
  public:
-  MultiprecisionInteger m_n;
-  MultiprecisionInteger m_e;
+  MultiprecisionInteger m_m_pow_d;  // m**d mod n
 
   static std::unique_ptr<RsaSignatureMaterial> create_or_throw(
       ParserInput& input);
@@ -52,33 +51,14 @@ class NEOPG_UNSTABLE_API RsaSignatureMaterial : public SignatureMaterial {
 /// Key material for DSA public keys.
 class NEOPG_UNSTABLE_API DsaSignatureMaterial : public SignatureMaterial {
  public:
-  MultiprecisionInteger m_p;
-  MultiprecisionInteger m_q;
-  MultiprecisionInteger m_g;
-  MultiprecisionInteger m_y;  // g**x mod p (x secret)
+  MultiprecisionInteger m_r;
+  MultiprecisionInteger m_s;
 
   static std::unique_ptr<DsaSignatureMaterial> create_or_throw(
       ParserInput& input);
 
   PublicKeyAlgorithm algorithm() const override {
     return PublicKeyAlgorithm::Dsa;
-  };
-
-  void write(std::ostream& out) const override;
-};
-
-/// Key material for Elgamal public keys.
-class NEOPG_UNSTABLE_API ElgamalSignatureMaterial : public SignatureMaterial {
- public:
-  MultiprecisionInteger m_p;
-  MultiprecisionInteger m_g;
-  MultiprecisionInteger m_y;  // g**x mod p (x secret)
-
-  static std::unique_ptr<ElgamalSignatureMaterial> create_or_throw(
-      ParserInput& input);
-
-  PublicKeyAlgorithm algorithm() const override {
-    return PublicKeyAlgorithm::Elgamal;
   };
 
   void write(std::ostream& out) const override;

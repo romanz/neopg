@@ -26,7 +26,7 @@ TEST(NeoPGTest, openpgp_signature_data_test) {
     ParserInput in(raw.data(), raw.length());
     auto signature = SignatureData::create_or_throw(SignatureVersion::V3, in);
     ASSERT_EQ(signature->version(), SignatureVersion::V3);
-    auto v3sig = dynamic_cast<V3SignatureData*>(signature.get());
+    auto v3sig = dynamic_cast<V2o3SignatureData*>(signature.get());
     ASSERT_NE(v3sig, nullptr);
     ASSERT_EQ(v3sig->m_type, static_cast<SignatureType>(0x10));
     ASSERT_EQ(v3sig->m_created, 0x12345678);

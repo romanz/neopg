@@ -95,9 +95,11 @@ static void output_public_key_data(PublicKeyData* pub) {
 }
 
 static void output_signature_data(SignatureData* sig) {
+  SignatureMaterial* sigmat = nullptr;
   switch (sig->version()) {
+    case SignatureVersion::V2:
     case SignatureVersion::V3: {
-      auto v3sig = dynamic_cast<V3SignatureData*>(sig);
+      auto v3sig = dynamic_cast<V2o3SignatureData*>(sig);
       std::cout << "\tversion 3, created " << v3sig->m_created
                 << ", md5len 5, sigclass 0x"
                 << (boost::format("%02x") %
@@ -111,11 +113,13 @@ static void output_signature_data(SignatureData* sig) {
                 << (boost::format("%02x") %
                     static_cast<int>(v3sig->m_quick.data()[1]))
                 << "\n";
+      sigmat = v3sig->m_signature.get();
     } break;
     case SignatureVersion::V4: {
       auto v4sig = dynamic_cast<V4SignatureData*>(sig);
       // FIXME: Try to get created from subpackets.
-      std::cout << "\tversion 4, created 0, md5len 0, sigclass 0x"
+      std::cout << "\tversion 4, created " << v4sig->m_created
+                << ", md5len 0, sigclass 0x"
                 << (boost::format("%02x") %
                     static_cast<int>(v4sig->signature_type()))
                 << "\n";
@@ -127,9 +131,28 @@ static void output_signature_data(SignatureData* sig) {
                 << (boost::format("%02x") %
                     static_cast<int>(v4sig->m_quick.data()[1]))
                 << "\n";
+      std::cout << "\thashed subpkts " << v4sig->m_hashed_subpackets << "\n";
+      std::cout << "\tunhashed subpkts " << v4sig->m_unhashed_subpackets
+                << "\n";
+      sigmat = v4sig->m_signature.get();
     } break;
     default:
       break;
+  }
+  if (sigmat) {
+    switch (sigmat->algorithm()) {
+      case PublicKeyAlgorithm::Rsa: {
+        auto rsa = dynamic_cast<RsaSignatureMaterial*>(sigmat);
+        std::cout << "\tdata: [" << rsa->m_m_pow_d.length() << " bits]\n";
+      } break;
+      case PublicKeyAlgorithm::Dsa: {
+        auto dsa = dynamic_cast<DsaSignatureMaterial*>(sigmat);
+        std::cout << "\tdata: [" << dsa->m_r.length() << " bits]\n";
+        std::cout << "\tdata: [" << dsa->m_s.length() << " bits]\n";
+      } break;
+      default:
+        break;
+    }
   }
 }
 

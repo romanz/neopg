@@ -39,7 +39,7 @@ enum class HashAlgorithm : uint8_t {
   Private_110 = 110
 };
 
-enum class SignatureVersion : uint8_t { V3 = 3, V4 = 4 };
+enum class SignatureVersion : uint8_t { V2 = 2, V3 = 3, V4 = 4 };
 
 /// Represent an OpenPGP [signature
 /// type](https://tools.ietf.org/html/rfc4880#section-5.2.1).
@@ -77,8 +77,11 @@ class NEOPG_UNSTABLE_API SignatureData {
   virtual HashAlgorithm hash_algorithm() const noexcept = 0;
 };
 
-class NEOPG_UNSTABLE_API V3SignatureData : public SignatureData {
+class NEOPG_UNSTABLE_API V2o3SignatureData : public SignatureData {
  public:
+  // V2 and V3 signatures are identical but for the version number.
+  SignatureVersion m_version;
+
   SignatureType m_type{SignatureType::Binary};
   uint32_t m_created{0};
   std::array<uint8_t, 8> m_signer{{0, 0, 0, 0, 0, 0, 0, 0}};
@@ -87,13 +90,12 @@ class NEOPG_UNSTABLE_API V3SignatureData : public SignatureData {
   std::array<uint8_t, 2> m_quick{{0, 0}};
   std::unique_ptr<SignatureMaterial> m_signature;
 
-  static std::unique_ptr<V3SignatureData> create_or_throw(ParserInput& input);
+  static std::unique_ptr<V2o3SignatureData> create_or_throw(
+      SignatureVersion version, ParserInput& input);
 
   void write(std::ostream& out) const override;
 
-  SignatureVersion version() const noexcept override {
-    return SignatureVersion::V3;
-  }
+  SignatureVersion version() const noexcept override { return m_version; }
   SignatureType signature_type() const noexcept override { return m_type; }
   PublicKeyAlgorithm public_key_algorithm() const noexcept override {
     return m_public_key_algorithm;
@@ -110,8 +112,8 @@ class NEOPG_UNSTABLE_API V4SignatureData : public SignatureData {
   PublicKeyAlgorithm m_public_key_algorithm{PublicKeyAlgorithm::Rsa};
   HashAlgorithm m_hash_algorithm{HashAlgorithm::Sha1};
   std::unique_ptr<SignatureMaterial> m_signature;
-  // hashed subpacket data
-  // unhashed subpacket data
+  int m_hashed_subpackets{0};
+  int m_unhashed_subpackets{0};
   std::array<uint8_t, 2> m_quick{{0, 0}};
 
   static std::unique_ptr<V4SignatureData> create_or_throw(ParserInput& input);
