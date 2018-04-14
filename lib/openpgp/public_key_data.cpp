@@ -174,13 +174,13 @@ std::vector<uint8_t> V4PublicKeyData::fingerprint() const {
   std::stringstream out;
   write(out);
   std::string public_key = out.str();
-
-  // This may be truncated.
-  uint16_t length = static_cast<uint16_t>(public_key.size());
+  // This may be truncated.  Add 1 for version.
+  uint16_t length = static_cast<uint16_t>(public_key.size() + 1);
   auto sha1 = Botan::HashFunction::create_or_throw("SHA-1");
   sha1->update(0x99);
   sha1->update(static_cast<uint8_t>(length >> 8));
   sha1->update(static_cast<uint8_t>(length));
+  sha1->update(0x04);  // Version
   sha1->update(public_key);
   fpr.resize(sha1->output_length());
   sha1->final(fpr.data());
