@@ -13,6 +13,8 @@ std::unique_ptr<PublicKeyMaterial> PublicKeyMaterial::create_or_throw(
     PublicKeyAlgorithm algorithm, ParserInput& in) {
   switch (algorithm) {
     case PublicKeyAlgorithm::Rsa:
+    case PublicKeyAlgorithm::RsaEncrypt:
+    case PublicKeyAlgorithm::RsaSign:
       return RsaPublicKeyMaterial::create_or_throw(in);
     case PublicKeyAlgorithm::Dsa:
       return DsaPublicKeyMaterial::create_or_throw(in);
